@@ -550,7 +550,8 @@ const BTN_EXP = 'margin-left:10px;font:12px/1 system-ui;padding:5px 10px;border:
           ? `<b style="font-size:13px">${sa.toFixed(1)}/${st.toFixed(1)}</b>
              <div style="font-size:10px;color:var(--sub);margin-top:1px">达成率 ${pctf(sa/st)}</div>`
           : '<span style="color:#94a3b8">—</span>';
-        const yhS = R.lv==='city' ? cr.yh_calc : (np ? {a:np.yh_a} : null);
+        // 养活达成/目标：BDM/BD 行与城市共用同一值，不单独分配目标/计算达成（2026-11-07 用户定版）
+        const yhS = cr.yh_calc;
         const yhCell = (yhS && yhS.a > 0)
           ? `<b style="font-size:13px;color:#0f766e">${yhS.a.toFixed(1)}${yhS.t?'/'+yhS.t.toFixed(1)+' 分':''}</b>
              <div style="font-size:10px;color:var(--sub);margin-top:1px">达成率 ${yhS.t?pctf(yhS.a/yhS.t):'—'} · 目标=11月初版</div>`
