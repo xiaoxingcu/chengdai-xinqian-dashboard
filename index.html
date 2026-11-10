@@ -472,7 +472,7 @@ const BTN_EXP = 'margin-left:10px;font:12px/1 system-ui;padding:5px 10px;border:
   const month = DL.month || '';
   const mm = month.slice(4,6), yy = month.slice(0,4);
   let mode = 'b';   // b=建店 s=得分
-  let fCity = '全部', fBdm = '全部';
+  let fCity = '全部', fBdm = '全部', fBd = '全部';
   const CD = ['武陵区','鼎城区','津市','常德其他'];
   const cityNames = Object.keys(DL.cities).sort((a,b)=>{
     const ga = CD.includes(a)?1:0, gb = CD.includes(b)?1:0;
@@ -532,8 +532,9 @@ const BTN_EXP = 'margin-left:10px;font:12px/1 system-ui;padding:5px 10px;border:
       Object.entries(cu.bdms).sort((a,b)=>(b[1].tot.b||0)-(a[1].tot.b||0)).forEach(([bm,bu])=>{
         if(fBdm!=='全部' && bm!==fBdm) return;
         list.push({lv:'bdm', bm, bd:null, nd:bu.tot, tgt:bu.tgt||{}});
-        Object.entries(bu.bds).sort((a,b)=>(b[1].b||0)-(a[1].b||0)).forEach(([bd,nd])=>
-          list.push({lv:'bd', bm, bd, nd, tgt:nd.tgt||{}}));
+        Object.entries(bu.bds).sort((a,b)=>(b[1].b||0)-(a[1].b||0)).forEach(([bd,nd])=>{
+          if(fBd!=='全部' && bd!==fBd) return;
+          list.push({lv:'bd', bm, bd, nd, tgt:nd.tgt||{}});});
       });
       for(const R of list){
         const nd = R.nd, tg = R.tgt || {};
@@ -588,9 +589,9 @@ const BTN_EXP = 'margin-left:10px;font:12px/1 system-ui;padding:5px 10px;border:
                    : `<b style="font-size:13px">${nc.visits_120}</b> 家
                       <div style="font-size:10px;color:var(--sub)">剩 ${nc.remain_days} 天 · 每天约 ${Math.ceil(nc.visits_120/(nc.remain_days||15))} 家</div>`)));
         h += `<tr ${bg?`style="${bg}"`:''}>
-          <td class="l" style="position:sticky;left:0;${bg};white-space:nowrap">${R.lv==='city'?nm:''}</td>
-          <td>${R.lv==='bdm'?nm:(R.lv==='bd'?(R.bm||''):'')}</td>
-          <td class="l">${R.lv==='bd'?nm:''}</td>
+          <td class="l" style="position:sticky;left:0;${bg};white-space:nowrap">${R.lv==='city'?nm:cn}</td>
+          <td>${R.lv==='bdm'?nm:(R.lv==='bd'?(R.bm||''):'<span style="color:#94a3b8">全部</span>')}</td>
+          <td class="l">${R.lv==='bd'?nm:'<span style="color:#94a3b8">全部</span>'}</td>
           <td style="background:#ecfdf5">${rtCell}</td>
           <td style="background:#f5f3ff">${stCell}</td>
           <td style="background:#fef3c7">${yhCell}</td>
@@ -628,10 +629,16 @@ const BTN_EXP = 'margin-left:10px;font:12px/1 system-ui;padding:5px 10px;border:
   const bdmNames = cn => cn==='全部'
     ? [...new Set(Object.values(DL.cities).flatMap(c=>Object.keys(c.bdms)))]
     : Object.keys(DL.cities[cn].bdms);
+  const bdNames = (cn, bm) => {
+    const cs = cn==='全部' ? Object.values(DL.cities) : [DL.cities[cn]].filter(Boolean);
+    const ms = bm==='全部' ? cs.flatMap(c=>Object.values(c.bdms)) : cs.map(c=>c.bdms[bm]).filter(Boolean);
+    return [...new Set(ms.flatMap(m=>Object.keys(m.bds)))];
+  };
   function drawFilters(){
     document.getElementById('dailyFilters').innerHTML =
-      `<select id="dSelCity" style="${SELST}">${['全部',...cityNames].map(v=>`<option ${v===fCity?'selected':''}>${v}</option>`).join('')}</select>`+
-      `<select id="dSelBdm" style="${SELST}">${['全部',...bdmNames(fCity)].map(v=>`<option ${v===fBdm?'selected':''}>${v}</option>`).join('')}</select>`+
+      `城市 <select id="dSelCity" style="${SELST}">${['全部',...cityNames].map(v=>`<option ${v===fCity?'selected':''}>${v}</option>`).join('')}</select> `+
+      `BDM <select id="dSelBdm" style="${SELST}">${['全部',...bdmNames(fCity)].map(v=>`<option ${v===fBdm?'selected':''}>${v}</option>`).join('')}</select> `+
+      `BD <select id="dSelBd" style="${SELST}">${['全部',...bdNames(fCity,fBdm)].map(v=>`<option ${v===fBd?'selected':''}>${v}</option>`).join('')}</select> `+
       `<button id="btnExportDaily" style="${BTN_EXP}">⬇ 导出日维度</button>`;
   }
   drawFilters();
@@ -643,9 +650,14 @@ const BTN_EXP = 'margin-left:10px;font:12px/1 system-ui;padding:5px 10px;border:
     if(e.target.id==='dSelCity'){
       fCity = e.target.value;
       if(fCity!=='全部' && fBdm!=='全部' && !bdmNames(fCity).includes(fBdm)) fBdm = '全部';
+      if(fBd!=='全部' && !bdNames(fCity,fBdm).includes(fBd)) fBd = '全部';
       drawFilters(); render();
     } else if(e.target.id==='dSelBdm'){
-      fBdm = e.target.value; render();
+      fBdm = e.target.value;
+      if(fBd!=='全部' && !bdNames(fCity,fBdm).includes(fBd)) fBd = '全部';
+      drawFilters(); render();
+    } else if(e.target.id==='dSelBd'){
+      fBd = e.target.value; render();
     }
   });
   render();
